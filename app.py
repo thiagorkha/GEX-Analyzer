@@ -22,7 +22,7 @@ app = Flask(__name__, template_folder='frontend', static_folder='frontend')
 CORS(app)
 
 # Load configuration
-app.config.from_object(config.Config)
+app.config.from_object(config)
 
 # Register blueprints
 app.register_blueprint(api_blueprint)
@@ -53,7 +53,5 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    import os
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
-
+    debug_mode = app.config.get('DEBUG', True)
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000)
