@@ -1,339 +1,396 @@
 /**
- * Main.js - Main Application Logic
- * Orchestrates the GEX Analyzer application
+ * GEX Analyzer - Main Application Logic
  */
 
-class GexAnalyzerApp {
+class GEXAnalyzerApp {
     constructor() {
-        this.api = api;
-        this.chartManager = chartManager;
-        this.currentData = null;
-        this.currentAnalysis = null;
-        this.init();
+        this.currentPrice = null;
+        this.expirationDate = null;
+        this.options = [];
+        this.analysisResults = null;
+
+        this.initElements();
+        this.setupEventListeners();
+        this.setDefaultExpirationDate();
     }
 
-    async init() {
-        this.setupEventListeners();
-        this.chartManager.initializePriceChart('price-chart');
-        this.chartManager.initializeGexChart('gex-chart');
-        
-        // Check API health
-        const healthy = await this.api.healthCheck();
-        if (!healthy) {
-            this.showError('Unable to connect to API server');
-        }
+    initElements() {
+        this.priceInput = document.getElementById('current-price');
+        this.expirationInput = document.getElementById('expiration-date');
+        this.analyzeBtn = document.getElementById('analyze-btn');
+        this.loadExampleBtn = document.getElementById('load-example-btn');
+
+        this.errorMsg = document.getElementById('error-message');
+        this.successMsg = document.getElementById('success-message');
+        this.infoMsg = document.getElementById('info-message');
+        this.loadingSpinner = document.getElementById('loading');
+
+        this.dashboardSection = document.getElementById('dashboard');
+        this.resultsSection = document.getElementById('results');
     }
 
     setupEventListeners() {
-        // Analyze button
-        document.getElementById('analyze-btn').addEventListener('click', () => this.analyzeData());
-
-        // Load example button
-        document.getElementById('load-example-btn').addEventListener('click', () => this.loadExampleData());
-
-        // Tab buttons
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
-        });
-
-        // Auto-focus on error/success messages
-        const errorMsg = document.getElementById('error-message');
-        const successMsg = document.getElementById('success-message');
-        
-        if (errorMsg) errorMsg.addEventListener('click', () => this.clearError());
-        if (successMsg) successMsg.addEventListener('click', () => this.clearSuccess());
+        this.analyzeBtn.addEventListener('click', () => this.handleAnalyze());
+        this.loadExampleBtn.addEventListener('click', () => this.loadExample());
     }
 
-    async analyzeData() {
-        try {
-            const dataInput = document.getElementById('data-input').value;
-            const gexInput = document.getElementById('gex-data').value;
-
-            if (!dataInput.trim()) {
-                this.showError('Please enter OHLC data');
-                return;
-            }
-
-            // Show loading state
-            this.setLoading(true);
-
-            // Parse input data
-            let ohlcData;
-            try {
-                ohlcData = JSON.parse(dataInput);
-            } catch (e) {
-                this.showError('Invalid JSON format for OHLC data');
-                this.setLoading(false);
-                return;
-            }
-
-            let gexData = {};
-            if (gexInput.trim()) {
-                try {
-                    gexData = JSON.parse(gexInput);
-                } catch (e) {
-                    this.showError('Invalid JSON format for GEX data');
-                    this.setLoading(false);
-                    return;
-                }
-            }
-
-            // Call API
-            const result = await this.api.analyze(ohlcData, gexData);
-
-            if (result.error) {
-                this.showError(result.error);
-                this.setLoading(false);
-                return;
-            }
-
-            // Store results
-            this.currentData = ohlcData;
-            this.currentAnalysis = result;
-
-            // Update UI
-            this.displayResults(result);
-            this.updateCharts(ohlcData, result);
-
-            this.showSuccess('Analysis completed successfully');
-            this.setLoading(false);
-
-        } catch (error) {
-            console.error('Analysis error:', error);
-            this.showError(`Analysis failed: ${error.message}`);
-            this.setLoading(false);
-        }
-    }
-
-    async loadExampleData() {
-        try {
-            const response = await fetch('assets/example_data.json');
-            const data = await response.json();
-
-            document.getElementById('data-input').value = JSON.stringify(data.ohlc, null, 2);
-            if (data.gex) {
-                document.getElementById('gex-data').value = JSON.stringify(data.gex, null, 2);
-            }
-
-            this.showSuccess('Example data loaded');
-        } catch (error) {
-            this.showError('Could not load example data');
-        }
-    }
-
-    displayResults(analysis) {
-        // Update summary cards
-        if (analysis.summary) {
-            document.getElementById('current-price').textContent = 
-                analysis.summary.current_price.toFixed(2);
-            document.getElementById('volume').textContent = 
-                (analysis.summary.volume_24h / 1e6).toFixed(2) + 'M';
-        }
-
-        // Update GEX analysis
-        if (analysis.gex_analysis) {
-            const gex = analysis.gex_analysis;
-            document.getElementById('net-gex').textContent = gex.net_gex.toFixed(2);
-            document.getElementById('gex-interpretation').textContent = gex.interpretation;
-        }
-
-        // Update regimes
-        if (analysis.regimes && analysis.regimes.length > 0) {
-            document.getElementById('regime').textContent = analysis.regimes[0].type.toUpperCase();
-        }
-
-        // Display patterns
-        this.displayPatterns(analysis.patterns || []);
-
-        // Display regimes
-        this.displayRegimes(analysis.regimes || []);
-
-        // Display signals
-        this.displaySignals(analysis.signals || []);
-
-        // Display trading signals
-        this.displayTradingSignals(analysis.signals || []);
-    }
-
-    displayPatterns(patterns) {
-        const container = document.getElementById('patterns-list');
-        
-        if (!patterns || patterns.length === 0) {
-            container.innerHTML = '<p>No patterns detected</p>';
-            return;
-        }
-
-        container.innerHTML = patterns.map(pattern => `
-            <div class="result-item">
-                <h4>${pattern.description}</h4>
-                <p><strong>Type:</strong> ${pattern.type}</p>
-                <p><strong>Strength:</strong> ${pattern.strength.toFixed(1)}%</p>
-                <p><strong>Confidence:</strong> ${(pattern.confidence * 100).toFixed(1)}%</p>
-                <span class="badge ${pattern.type}">${pattern.type}</span>
-            </div>
-        `).join('');
-    }
-
-    displayRegimes(regimes) {
-        const container = document.getElementById('regimes-list');
-        
-        if (!regimes || regimes.length === 0) {
-            container.innerHTML = '<p>No regimes identified</p>';
-            return;
-        }
-
-        container.innerHTML = regimes.map(regime => `
-            <div class="result-item">
-                <h4>${regime.type.toUpperCase()}</h4>
-                <p><strong>Confidence:</strong> ${(regime.confidence * 100).toFixed(1)}%</p>
-                <p><strong>Avg Return:</strong> ${(regime.characteristics.avg_return * 100).toFixed(3)}%</p>
-                <p><strong>Volatility:</strong> ${(regime.characteristics.volatility * 100).toFixed(3)}%</p>
-            </div>
-        `).join('');
-    }
-
-    displaySignals(signals) {
-        const container = document.getElementById('signals-list');
-        
-        if (!signals || signals.length === 0) {
-            container.innerHTML = '<p>No signals generated</p>';
-            return;
-        }
-
-        container.innerHTML = signals.map(signal => `
-            <div class="result-item">
-                <h4>${signal.reason}</h4>
-                <p><strong>Type:</strong> ${signal.type}</p>
-                <p><strong>Confidence:</strong> ${(signal.confidence * 100).toFixed(1)}%</p>
-                <p><strong>Entry:</strong> ${signal.entry_price.toFixed(2)}</p>
-                <p><strong>TP:</strong> ${signal.take_profit.toFixed(2)}</p>
-                <p><strong>SL:</strong> ${signal.stop_loss.toFixed(2)}</p>
-                <span class="badge ${signal.type}">${signal.type}</span>
-            </div>
-        `).join('');
-    }
-
-    displayTradingSignals(signals) {
-        const container = document.getElementById('trading-signals');
-        
-        if (!signals || signals.length === 0) {
-            container.innerHTML = '<p>No trading signals generated</p>';
-            return;
-        }
-
-        container.innerHTML = signals.map(signal => `
-            <div class="signal-card ${signal.type}">
-                <h3>
-                    <span class="signal-type ${signal.type}">${signal.type.toUpperCase()}</span>
-                </h3>
-                <div class="signal-details">
-                    <div class="signal-detail">
-                        <label>Reason</label>
-                        <value>${signal.reason}</value>
-                    </div>
-                    <div class="signal-detail">
-                        <label>Confidence</label>
-                        <value>${(signal.confidence * 100).toFixed(1)}%</value>
-                    </div>
-                    <div class="signal-detail">
-                        <label>Entry Price</label>
-                        <value>${signal.entry_price.toFixed(2)}</value>
-                    </div>
-                    <div class="signal-detail">
-                        <label>Take Profit</label>
-                        <value>${signal.take_profit.toFixed(2)}</value>
-                    </div>
-                    <div class="signal-detail">
-                        <label>Stop Loss</label>
-                        <value>${signal.stop_loss.toFixed(2)}</value>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    updateCharts(ohlcData, analysis) {
-        // Update price chart
-        if (ohlcData && ohlcData.length > 0) {
-            this.chartManager.updatePriceChart(ohlcData);
-        }
-
-        // Update GEX chart if available
-        if (analysis.gex_analysis) {
-            // Note: This would need actual strike prices and gamma exposure
-            // For now, we'll create synthetic data for demonstration
-            const strikeCount = 10;
-            const currentPrice = analysis.summary.current_price;
-            const strikes = Array.from({length: strikeCount}, (_, i) => 
-                currentPrice * (0.9 + i * 0.02)
-            );
-            
-            // Synthetic gamma exposure
-            const gammaExposure = strikes.map(strike => {
-                const distance = Math.abs(strike - currentPrice) / currentPrice;
-                return Math.sin(distance * Math.PI) * 100;
-            });
-
-            this.chartManager.updateGexChart(strikes, gammaExposure);
-        }
-    }
-
-    switchTab(tabId) {
-        // Hide all tabs
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.remove('active');
-        });
-
-        // Remove active class from all buttons
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-
-        // Show selected tab
-        const selectedTab = document.getElementById(tabId);
-        if (selectedTab) {
-            selectedTab.classList.add('active');
-        }
-
-        // Add active class to clicked button
-        event.target.classList.add('active');
-    }
-
-    setLoading(isLoading) {
-        const btn = document.getElementById('analyze-btn');
-        if (isLoading) {
-            btn.disabled = true;
-            btn.textContent = 'Analyzing...';
-        } else {
-            btn.disabled = false;
-            btn.textContent = 'Analyze';
-        }
+    setDefaultExpirationDate() {
+        // Set to next Friday
+        const today = new Date();
+        const daysUntilFriday = (5 - today.getDay() + 7) % 7 || 7;
+        const nextFriday = new Date(today.setDate(today.getDate() + daysUntilFriday));
+        this.expirationInput.valueAsDate = nextFriday;
     }
 
     showError(message) {
-        const errorEl = document.getElementById('error-message');
-        errorEl.textContent = message;
-        errorEl.classList.add('show');
-        setTimeout(() => this.clearError(), 5000);
+        this.errorMsg.textContent = message;
+        this.errorMsg.classList.remove('hidden');
+        this.successMsg.classList.add('hidden');
+        this.infoMsg.classList.add('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     showSuccess(message) {
-        const successEl = document.getElementById('success-message');
-        successEl.textContent = message;
-        successEl.classList.add('show');
-        setTimeout(() => this.clearSuccess(), 3000);
+        this.successMsg.textContent = message;
+        this.successMsg.classList.remove('hidden');
+        this.errorMsg.classList.add('hidden');
+        this.infoMsg.classList.add('hidden');
     }
 
-    clearError() {
-        document.getElementById('error-message').classList.remove('show');
+    showInfo(message) {
+        this.infoMsg.textContent = message;
+        this.infoMsg.classList.remove('hidden');
+        this.errorMsg.classList.add('hidden');
+        this.successMsg.classList.add('hidden');
     }
 
-    clearSuccess() {
-        document.getElementById('success-message').classList.remove('show');
+    showLoading(show = true) {
+        if (show) {
+            this.loadingSpinner.classList.remove('hidden');
+            this.analyzeBtn.disabled = true;
+        } else {
+            this.loadingSpinner.classList.add('hidden');
+            this.analyzeBtn.disabled = false;
+        }
+    }
+
+    async handleAnalyze() {
+        try {
+            this.currentPrice = parseFloat(this.priceInput.value);
+            this.expirationDate = this.expirationInput.value;
+
+            // Validate inputs
+            if (!this.currentPrice || this.currentPrice <= 0) {
+                this.showError('Por favor, insira um preço válido');
+                return;
+            }
+
+            if (!this.expirationDate) {
+                this.showError('Por favor, selecione uma data de expiração');
+                return;
+            }
+
+            // Get uploaded options
+            this.options = window.excelParser?.getUploadedOptions() || [];
+            if (this.options.length === 0) {
+                this.showError('Por favor, faça upload de um arquivo com dados das opções');
+                return;
+            }
+
+            this.showLoading(true);
+            this.showInfo('Analisando dados... Aguarde.');
+
+            // Call API
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    current_price: this.currentPrice,
+                    expiration_date: this.expirationDate,
+                    options: this.options
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro na análise');
+            }
+
+            const result = await response.json();
+            this.analysisResults = result;
+
+            this.showLoading(false);
+            this.showSuccess(`✅ Análise completa! ${result.strikes.length} strikes analisados.`);
+            this.displayResults(result);
+
+        } catch (error) {
+            this.showLoading(false);
+            this.showError(`Erro: ${error.message}`);
+            console.error(error);
+        }
+    }
+
+    displayResults(result) {
+        // Show sections
+        this.dashboardSection.classList.remove('hidden');
+        this.resultsSection.classList.remove('hidden');
+
+        // Update dashboard cards
+        document.getElementById('display-price').textContent = this.currentPrice.toFixed(2);
+        document.getElementById('total-gex').textContent = result.total_gex.toFixed(0);
+        document.getElementById('gex-regime').textContent = result.regime || 'Neutral';
+        document.getElementById('walls-count').textContent = result.patterns?.walls?.length || 0;
+
+        // Pin risk level
+        const pinRiskElement = document.getElementById('pin-risk');
+        if (result.patterns?.pins?.length > 0) {
+            pinRiskElement.textContent = 'ALTO';
+            pinRiskElement.className = 'value badge badge-danger';
+        } else {
+            pinRiskElement.textContent = 'BAIXO';
+            pinRiskElement.className = 'value badge badge-success';
+        }
+
+        // Populate results table
+        this.populateResultsTable(result.strikes);
+
+        // Create charts
+        this.createGexChart(result.strikes);
+        this.createGammaChart(result.strikes);
+
+        // Display patterns
+        this.displayPatterns(result.patterns);
+
+        // Display signals
+        this.displaySignals(result.strategies);
+
+        // Scroll to dashboard
+        window.scrollTo({ top: this.dashboardSection.offsetTop - 100, behavior: 'smooth' });
+    }
+
+    populateResultsTable(strikes) {
+        const tbody = document.getElementById('results-tbody');
+        tbody.innerHTML = '';
+
+        strikes.forEach(strike => {
+            const row = document.createElement('tr');
+            const statusClass = strike.gex > 0 ? 'badge-success' : 'badge-danger';
+            const statusText = strike.gex > 0 ? 'Bullish' : 'Bearish';
+
+            row.innerHTML = `
+                <td><strong>${strike.strike.toFixed(2)}</strong></td>
+                <td>${strike.type === 'CALL' ? '📈 CALL' : '📉 PUT'}</td>
+                <td>${strike.gamma.toFixed(4)}</td>
+                <td>${strike.oi.toLocaleString()}</td>
+                <td><strong>${strike.gex.toFixed(0)}</strong></td>
+                <td><span class="badge ${statusClass}">${statusText}</span></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    createGexChart(strikes) {
+        const containerDiv = document.getElementById('gex-chart').parentElement;
+        const calls = strikes.filter(s => s.type === 'CALL');
+        const puts = strikes.filter(s => s.type === 'PUT');
+
+        const trace1 = {
+            x: calls.map(s => s.strike),
+            y: calls.map(s => s.gex),
+            name: 'CALL GEX',
+            type: 'bar',
+            marker: { color: '#10b981' }
+        };
+
+        const trace2 = {
+            x: puts.map(s => s.strike),
+            y: puts.map(s => s.gex),
+            name: 'PUT GEX',
+            type: 'bar',
+            marker: { color: '#ef4444' }
+        };
+
+        const layout = {
+            title: 'GEX por Strike',
+            xaxis: { title: 'Strike' },
+            yaxis: { title: 'GEX' },
+            barmode: 'group',
+            responsive: true,
+            margin: { b: 100 }
+        };
+
+        Plotly.newPlot(containerDiv, [trace1, trace2], layout, { responsive: true });
+    }
+
+    createGammaChart(strikes) {
+        const containerDiv = document.getElementById('gamma-chart').parentElement;
+        const calls = strikes.filter(s => s.type === 'CALL');
+        const puts = strikes.filter(s => s.type === 'PUT');
+
+        const trace1 = {
+            x: calls.map(s => s.strike),
+            y: calls.map(s => s.gamma),
+            name: 'CALL Gamma',
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: { color: '#6366f1', width: 2 },
+            marker: { size: 8 }
+        };
+
+        const trace2 = {
+            x: puts.map(s => s.strike),
+            y: puts.map(s => s.gamma),
+            name: 'PUT Gamma',
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: { color: '#ec4899', width: 2 },
+            marker: { size: 8 }
+        };
+
+        const layout = {
+            title: 'Gamma por Strike',
+            xaxis: { title: 'Strike' },
+            yaxis: { title: 'Gamma' },
+            responsive: true,
+            margin: { b: 100 }
+        };
+
+        Plotly.newPlot(containerDiv, [trace1, trace2], layout, { responsive: true });
+    }
+
+    displayPatterns(patterns) {
+        const container = document.getElementById('patterns-container');
+        container.innerHTML = '';
+
+        if (!patterns || Object.keys(patterns).length === 0) {
+            container.innerHTML = '<p>Nenhum padrão detectado</p>';
+            return;
+        }
+
+        // Walls
+        if (patterns.walls && patterns.walls.length > 0) {
+            patterns.walls.forEach(wall => {
+                const card = this.createPatternCard(
+                    '🧱 Gamma Wall',
+                    `Strike: ${wall.strike.toFixed(2)}`,
+                    `Força: ${wall.strength.toFixed(2)}`,
+                    'info'
+                );
+                container.appendChild(card);
+            });
+        }
+
+        // Flips
+        if (patterns.flips && patterns.flips.length > 0) {
+            patterns.flips.forEach(flip => {
+                const card = this.createPatternCard(
+                    '↔️ Gamma Flip',
+                    `Strikes: ${flip.strike_call.toFixed(2)} / ${flip.strike_put.toFixed(2)}`,
+                    `Intensidade: ${flip.strength.toFixed(2)}`,
+                    'warning'
+                );
+                container.appendChild(card);
+            });
+        }
+
+        // Pins
+        if (patterns.pins && patterns.pins.length > 0) {
+            patterns.pins.forEach(pin => {
+                const card = this.createPatternCard(
+                    '📌 Pin Risk',
+                    `Strike: ${pin.strike.toFixed(2)}`,
+                    `Risco Alto! Intensidade: ${pin.strength.toFixed(2)}`,
+                    'danger'
+                );
+                container.appendChild(card);
+            });
+        }
+    }
+
+    createPatternCard(title, detail1, detail2, type) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.borderLeft = `4px solid var(--${type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : 'info'})`;
+        card.innerHTML = `
+            <h4 style="margin-bottom: 0.5rem; color: var(--dark);">${title}</h4>
+            <p style="font-size: 0.9rem; color: var(--text-light); margin: 0.25rem 0;">${detail1}</p>
+            <p style="font-size: 0.9rem; color: var(--text); margin: 0.25rem 0; font-weight: 600;">${detail2}</p>
+        `;
+        return card;
+    }
+
+    displaySignals(strategies) {
+        const container = document.getElementById('signals-container');
+        container.innerHTML = '';
+
+        if (!strategies || strategies.length === 0) {
+            container.innerHTML = '<p>Nenhum sinal gerado</p>';
+            return;
+        }
+
+        strategies.forEach(strategy => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.borderLeft = `4px solid ${strategy.direction === 'LONG' ? '#10b981' : '#ef4444'}`;
+
+            const directionIcon = strategy.direction === 'LONG' ? '📈' : '📉';
+            const confidenceColor = strategy.confidence > 0.7 ? '#10b981' : strategy.confidence > 0.5 ? '#f59e0b' : '#ef4444';
+
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h4 style="color: var(--dark); margin: 0;">${directionIcon} ${strategy.strategy_name}</h4>
+                    <span class="badge" style="background: ${confidenceColor}20; color: ${confidenceColor}; border: 1px solid ${confidenceColor};">
+                        ${(strategy.confidence * 100).toFixed(0)}%
+                    </span>
+                </div>
+                <p style="color: var(--text-light); margin: 0.5rem 0; font-size: 0.9rem;">
+                    <strong>Entrada:</strong> ${strategy.entry_price?.toFixed(2) || 'N/A'}
+                </p>
+                <p style="color: var(--text-light); margin: 0.5rem 0; font-size: 0.9rem;">
+                    <strong>Target:</strong> ${strategy.target_price?.toFixed(2) || 'N/A'} | 
+                    <strong>Stop:</strong> ${strategy.stop_loss?.toFixed(2) || 'N/A'}
+                </p>
+                <p style="color: var(--text-light); margin: 0.5rem 0; font-size: 0.9rem;">
+                    ${strategy.description || ''}
+                </p>
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    async loadExample() {
+        try {
+            this.showLoading(true);
+
+            const response = await fetch('/api/examples');
+            if (!response.ok) throw new Error('Erro ao carregar exemplo');
+
+            const examples = await response.json();
+            const example = examples[0]; // First example
+
+            // Populate form
+            this.priceInput.value = example.current_price;
+            this.expirationInput.valueAsDate = new Date(example.expiration_date);
+
+            // Set options
+            window.uploadedOptions = example.options;
+            document.getElementById('file-status').textContent = 
+                `✅ ${example.options.length} opções do exemplo carregadas`;
+            document.getElementById('file-status').style.color = '#10b981';
+
+            this.showLoading(false);
+            this.showSuccess('✅ Exemplo carregado! Clique em "Analisar GEX" para começar.');
+
+        } catch (error) {
+            this.showLoading(false);
+            this.showError(`Erro ao carregar exemplo: ${error.message}`);
+        }
     }
 }
 
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new GexAnalyzerApp();
+    window.app = new GEXAnalyzerApp();
 });
