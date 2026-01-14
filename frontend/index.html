@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEX Analyzer - Technical Analysis Platform</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <h1>GEX Analyzer</h1>
+                <p>Advanced Gamma Exposure Analysis Platform</p>
+            </div>
+            <div class="nav-links">
+                <a href="#dashboard">Dashboard</a>
+                <a href="#analysis">Analysis</a>
+                <a href="#signals">Signals</a>
+                <a href="#docs">Docs</a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section">
+                <div class="section-header">
+                    <h2>Market Dashboard</h2>
+                    <p>Real-time GEX analysis and market conditions</p>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Price Card -->
+                    <div class="card">
+                        <div class="card-header">Current Price</div>
+                        <div class="card-body">
+                            <div class="price-display">
+                                <span id="current-price" class="price">0.00</span>
+                                <span id="price-change" class="change"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GEX Card -->
+                    <div class="card">
+                        <div class="card-header">Net GEX</div>
+                        <div class="card-body">
+                            <div class="metric">
+                                <span id="net-gex" class="value">0</span>
+                                <span id="gex-interpretation" class="label">Neutral</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Volume Card -->
+                    <div class="card">
+                        <div class="card-header">24h Volume</div>
+                        <div class="card-body">
+                            <span id="volume" class="value">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Regime Card -->
+                    <div class="card">
+                        <div class="card-header">Market Regime</div>
+                        <div class="card-body">
+                            <span id="regime" class="value">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Input Section -->
+            <section id="input" class="section">
+                <div class="section-header">
+                    <h2>Data Input</h2>
+                    <p>Upload or paste market data for analysis</p>
+                </div>
+
+                <div class="input-container">
+                    <div class="form-group">
+                        <label for="data-input">OHLC Data (JSON):</label>
+                        <textarea id="data-input" placeholder='[{"open": 100, "high": 105, "low": 98, "close": 102, "volume": 1000}]'></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gex-data">GEX Data (optional JSON):</label>
+                        <textarea id="gex-data" placeholder='{"strike_prices": [], "gamma_values": [], "open_interest": []}'></textarea>
+                    </div>
+
+                    <button class="btn btn-primary" id="analyze-btn">Analyze</button>
+                    <button class="btn btn-secondary" id="load-example-btn">Load Example</button>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section id="charts" class="section">
+                <div class="section-header">
+                    <h2>Charts & Visualization</h2>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <canvas id="price-chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="gex-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analysis Section -->
+            <section id="analysis" class="section">
+                <div class="section-header">
+                    <h2>Analysis Results</h2>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="patterns-tab">Patterns</button>
+                    <button class="tab-btn" data-tab="regimes-tab">Regimes</button>
+                    <button class="tab-btn" data-tab="signals-tab">Signals</button>
+                </div>
+
+                <!-- Patterns Tab -->
+                <div id="patterns-tab" class="tab-content active">
+                    <div id="patterns-list" class="results-list">
+                        <p>No patterns detected</p>
+                    </div>
+                </div>
+
+                <!-- Regimes Tab -->
+                <div id="regimes-tab" class="tab-content">
+                    <div id="regimes-list" class="results-list">
+                        <p>No regimes identified</p>
+                    </div>
+                </div>
+
+                <!-- Signals Tab -->
+                <div id="signals-tab" class="tab-content">
+                    <div id="signals-list" class="results-list">
+                        <p>No signals generated</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Trading Signals Section -->
+            <section id="signals" class="section">
+                <div class="section-header">
+                    <h2>Trading Signals</h2>
+                    <p>Generated trading recommendations</p>
+                </div>
+
+                <div id="trading-signals" class="signals-container">
+                    <p>Run analysis to generate signals</p>
+                </div>
+            </section>
+
+            <!-- Error Message -->
+            <div id="error-message" class="error-message"></div>
+            <div id="success-message" class="success-message"></div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2024 GEX Analyzer. Advanced Technical Analysis Platform.</p>
+            <p>Created with precision for modern trading</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
