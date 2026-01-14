@@ -40,12 +40,15 @@ if __name__ == '__main__':
 
 ### 2.2 Update Procfile
 ```
-web: gunicorn app:app
+web: pip install --upgrade setuptools wheel && gunicorn app:app
 ```
 
 ### 2.3 Update requirements.txt
-Ensure these are included:
+Ensure these are included with setuptools first:
 ```
+setuptools>=65.5.0
+wheel>=0.38.0
+pip>=23.0.0
 Flask==3.0.0
 Flask-CORS==4.0.0
 gunicorn==21.2.0
@@ -57,6 +60,8 @@ Jinja2==3.1.2
 requests==2.31.0
 python-dotenv==1.0.0
 scipy==1.11.0
+pytest==7.4.0
+pytest-cov==4.1.0
 ```
 
 ### 2.4 Create .env File (Local Reference)
@@ -168,6 +173,30 @@ In Render dashboard:
 3. Applies on next deploy
 
 ## Troubleshooting
+
+### Issue: Build Failed - setuptools.build_meta Error
+
+This error: `pip._vendor.pyproject_hooks._impl.BackendUnavailable: Cannot import 'setuptools.build_meta'`
+
+**Root Cause**: Missing setuptools during dependency installation
+
+**Solution**:
+1. Add setuptools to requirements.txt (first line):
+```
+setuptools>=65.5.0
+wheel>=0.38.0
+pip>=23.0.0
+```
+
+2. Update Procfile to ensure upgrade:
+```
+web: pip install --upgrade setuptools wheel && gunicorn app:app
+```
+
+3. Clear Render cache and redeploy:
+   - In Render dashboard, select your service
+   - Click "Settings" → "Environment"
+   - Trigger manual redeploy
 
 ### Issue: Build Failed
 **Check**: 
