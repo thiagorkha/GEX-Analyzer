@@ -1,4 +1,6 @@
-web: pip install --upgrade setuptools wheel && gunicorn app:app
+web: pip install --upgrade pip setuptools wheel && pip install --no-build-isolation -r requirements.txt && gunicorn app:app
+
+
 
 
 
