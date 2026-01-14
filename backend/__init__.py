@@ -2,7 +2,7 @@
 Backend package initialization
 """
 
-from backend.config import config
+from backend.config import Config
 
 __version__ = '1.0.0'
-__all__ = ['config']
+__all__ = ['Config']
