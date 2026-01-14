@@ -22,7 +22,7 @@ app = Flask(__name__, template_folder='frontend', static_folder='frontend')
 CORS(app)
 
 # Load configuration
-app.config.from_object(config)
+app.config.from_object(config.Config)
 
 # Register blueprints
 app.register_blueprint(api_blueprint)
