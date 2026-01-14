@@ -36,11 +36,15 @@ class TestingConfig(Config):
     DEBUG = True
     TESTING = True
 
-# Select configuration based on environment
-config_name = os.environ.get('FLASK_ENV', 'development')
-if config_name == 'production':
-    config = ProductionConfig()
-elif config_name == 'testing':
-    config = TestingConfig()
-else:
-    config = DevelopmentConfig()
+# Select configuration class based on environment
+def get_config():
+    """Get appropriate config class based on environment"""
+    config_name = os.environ.get('FLASK_ENV', 'development').lower()
+    if config_name == 'production':
+        return ProductionConfig
+    elif config_name == 'testing':
+        return TestingConfig
+    else:
+        return DevelopmentConfig
+
+Config = get_config()
