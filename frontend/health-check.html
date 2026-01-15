@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GEX - Health Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 18px; }
+        .ok { color: #10b981; }
+        .error { color: #ef4444; }
+        .loading { color: #f59e0b; }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover { background: #4f46e5; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏥 GEX Analyzer - Health Check</h1>
+    
+    <h2>Frontend Checks</h2>
+    <div class="status" id="html"><span class="loading">⏳</span> Checking HTML Elements...</div>
+    <div class="status" id="scripts"><span class="loading">⏳</span> Checking Scripts...</div>
+    <div class="status" id="app"><span class="loading">⏳</span> Checking App Instance...</div>
+    
+    <h2>Backend Checks</h2>
+    <div class="status" id="health"><span class="loading">⏳</span> Health Check...</div>
+    <div class="status" id="examples"><span class="loading">⏳</span> Examples Endpoint...</div>
+    
+    <h2>Test Actions</h2>
+    <button onclick="testAnalyzeDirect()">🚀 Test Analyze (Direct)</button>
+    <button onclick="testAnalyzeViaApp()">🚀 Test Analyze (Via App)</button>
+    <button onclick="openMainApp()">📱 Open Main App</button>
+    <button onclick="openDebugPage()">🐛 Open Debug Page</button>
+    
+    <h2>Results</h2>
+    <pre id="results">Waiting for tests...</pre>
+
+    <script>
+        let results = [];
+
+        function log(msg) {
+            results.push(msg);
+            document.getElementById('results').textContent = results.join('\n');
+        }
+
+        function updateStatus(id, status, message) {
+            const el = document.getElementById(id);
+            const icon = status === 'ok' ? '✅' : status === 'error' ? '❌' : '⏳';
+            const className = status === 'ok' ? 'ok' : status === 'error' ? 'error' : 'loading';
+            el.innerHTML = `<span class="${className}">${icon}</span> ${message}`;
+        }
+
+        // Frontend checks
+        window.addEventListener('load', async () => {
+            // Check HTML elements
+            const elements = ['current-price', 'analyze-btn', 'file-input', 'dashboard'];
+            const allFound = elements.every(id => document.getElementById(id));
+            updateStatus('html', allFound ? 'ok' : 'error', 
+                allFound ? '✓ All HTML elements found' : '✗ Missing HTML elements');
+            log(`HTML Elements: ${allFound ? 'OK' : 'MISSING'}`);
+
+            // Check scripts
+            const hasPlotly = typeof Plotly !== 'undefined';
+            const hasXLSX = typeof XLSX !== 'undefined';
+            const allScripts = hasPlotly && hasXLSX;
+            updateStatus('scripts', allScripts ? 'ok' : 'error',
+                allScripts ? '✓ Scripts loaded (Plotly, XLSX)' : '✗ Missing scripts');
+            log(`Scripts: ${allScripts ? 'OK' : 'MISSING'} (Plotly: ${hasPlotly}, XLSX: ${hasXLSX})`);
+
+            // Check app
+            const hasApp = !!window.app;
+            const hasParser = !!window.excelParser;
+            updateStatus('app', hasApp && hasParser ? 'ok' : 'error',
+                hasApp && hasParser ? '✓ App initialized' : '✗ App not initialized');
+            log(`App: ${hasApp ? 'OK' : 'MISSING'} (Parser: ${hasParser})`);
+
+            // Backend checks
+            try {
+                const healthRes = await fetch('/api/health');
+                const healthOk = healthRes.ok;
+                updateStatus('health', healthOk ? 'ok' : 'error',
+                    healthOk ? '✓ Health check passed' : `✗ Health check failed (${healthRes.status})`);
+                log(`Health: ${healthOk ? 'OK' : 'FAILED'}`);
+            } catch (e) {
+                updateStatus('health', 'error', `✗ Backend unreachable: ${e.message}`);
+                log(`Health: ERROR - ${e.message}`);
+            }
+
+            try {
+                const exRes = await fetch('/api/examples');
+                const exOk = exRes.ok;
+                const exData = await exRes.json();
+                updateStatus('examples', exOk ? 'ok' : 'error',
+                    exOk ? `✓ Examples loaded (${exData.length} examples)` : `✗ Examples failed`);
+                log(`Examples: ${exOk ? 'OK' : 'FAILED'} - ${exData.length} examples`);
+            } catch (e) {
+                updateStatus('examples', 'error', `✗ Examples failed: ${e.message}`);
+                log(`Examples: ERROR - ${e.message}`);
+            }
+
+            log('\n✅ Health check complete!');
+        });
+
+        async function testAnalyzeDirect() {
+            log('\n📤 Testing Analyze (Direct API Call)...');
+            try {
+                const res = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        current_price: 100,
+                        expiration_date: '2024-02-16',
+                        options: [
+                            {ticker: 'SPY', tipo: 'CALL', strike: 100, gamma: 0.28, oi: 12000}
+                        ]
+                    })
+                });
+                const data = await res.json();
+                log(`✅ Direct API Success (${res.status})`);
+                log(`Response keys: ${Object.keys(data).join(', ')}`);
+            } catch (e) {
+                log(`❌ Direct API Error: ${e.message}`);
+            }
+        }
+
+        async function testAnalyzeViaApp() {
+            log('\n📤 Testing Analyze (Via App)...');
+            if (!window.app) {
+                log('❌ App not initialized');
+                return;
+            }
+            try {
+                // Set test data
+                window.app.priceInput.value = 100;
+                window.app.expirationInput.value = '2024-02-16';
+                window.uploadedOptions = [
+                    {ticker: 'SPY', tipo: 'CALL', strike: 100, gamma: 0.28, oi: 12000}
+                ];
+                log('✓ Test data set');
+                log('✓ Calling handleAnalyze()...');
+                await window.app.handleAnalyze();
+                log('✅ handleAnalyze completed');
+            } catch (e) {
+                log(`❌ Error: ${e.message}`);
+            }
+        }
+
+        function openMainApp() {
+            window.location.href = '/';
+        }
+
+        function openDebugPage() {
+            window.location.href = '/debug.html';
+        }
+    </script>
+</body>
+</html>
