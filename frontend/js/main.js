@@ -4,34 +4,102 @@
 
 class GEXAnalyzerApp {
     constructor() {
+        console.log('🔧 GEXAnalyzerApp construtor iniciando...');
         this.currentPrice = null;
         this.expirationDate = null;
         this.options = [];
         this.analysisResults = null;
 
         this.initElements();
+        console.log('✅ Elementos inicializados');
+        
         this.setupEventListeners();
+        console.log('✅ Event listeners configurados');
+        
         this.setDefaultExpirationDate();
+        console.log('✅ Data padrão definida');
     }
 
     initElements() {
+        console.log('🔍 Procurando elementos do DOM...');
         this.priceInput = document.getElementById('current-price');
+        console.log('   ✓ current-price:', !!this.priceInput);
+        
         this.expirationInput = document.getElementById('expiration-date');
+        console.log('   ✓ expiration-date:', !!this.expirationInput);
+        
         this.analyzeBtn = document.getElementById('analyze-btn');
+        console.log('   ✓ analyze-btn:', !!this.analyzeBtn);
+        
         this.loadExampleBtn = document.getElementById('load-example-btn');
+        console.log('   ✓ load-example-btn:', !!this.loadExampleBtn);
 
         this.errorMsg = document.getElementById('error-message');
+        console.log('   ✓ error-message:', !!this.errorMsg);
+        
         this.successMsg = document.getElementById('success-message');
+        console.log('   ✓ success-message:', !!this.successMsg);
+        
         this.infoMsg = document.getElementById('info-message');
+        console.log('   ✓ info-message:', !!this.infoMsg);
+        
         this.loadingSpinner = document.getElementById('loading');
+        console.log('   ✓ loading:', !!this.loadingSpinner);
 
         this.dashboardSection = document.getElementById('dashboard');
+        console.log('   ✓ dashboard:', !!this.dashboardSection);
+        
         this.resultsSection = document.getElementById('results');
+        console.log('   ✓ results:', !!this.resultsSection);
     }
 
     setupEventListeners() {
-        this.analyzeBtn.addEventListener('click', () => this.handleAnalyze());
-        this.loadExampleBtn.addEventListener('click', () => this.loadExample());
+        console.log('🎯 Configurando event listeners...');
+        
+        if (!this.analyzeBtn) {
+            console.error('❌ analyze-btn não encontrado!');
+        } else {
+            console.log('   Adicionando listener ao analyze-btn');
+            this.analyzeBtn.addEventListener('click', (e) => {
+                console.log('🔔 Analyze button CLICADO!', e);
+                this.handleAnalyze();
+            });
+        }
+        
+        if (!this.loadExampleBtn) {
+            console.error('❌ load-example-btn não encontrado!');
+        } else {
+            console.log('   Adicionando listener ao load-example-btn');
+            this.loadExampleBtn.addEventListener('click', () => {
+                console.log('🔔 Load example button CLICADO!');
+                this.loadExample();
+            });
+        }
+        
+        // Debug button
+        const debugBtn = document.getElementById('debug-btn');
+        if (!debugBtn) {
+            console.warn('⚠️ debug-btn não encontrado');
+        } else {
+            console.log('   Adicionando listener ao debug-btn');
+            debugBtn.addEventListener('click', () => {
+                console.log('🔔 Debug button CLICADO!');
+                this.showDebugInfo();
+            });
+        }
+        
+        console.log('✅ Event listeners configurados com sucesso');
+    }
+
+    showDebugInfo() {
+        console.clear();
+        console.log('========== DEBUG INFO ==========');
+        console.log('Parser inicializado:', !!window.excelParser);
+        console.log('Opções carregadas:', window.uploadedOptions?.length || 0, window.uploadedOptions);
+        console.log('Preço atual:', this.priceInput.value);
+        console.log('Data de expiração:', this.expirationInput.value);
+        console.log('==============================');
+        alert('✅ Verifique o console do navegador (F12) para ver informações de debug!');
     }
 
     setDefaultExpirationDate() {
@@ -76,29 +144,42 @@ class GEXAnalyzerApp {
 
     async handleAnalyze() {
         try {
+            console.log('🔍 Iniciando análise...');
+            
             this.currentPrice = parseFloat(this.priceInput.value);
             this.expirationDate = this.expirationInput.value;
 
             // Validate inputs
             if (!this.currentPrice || this.currentPrice <= 0) {
                 this.showError('Por favor, insira um preço válido');
+                console.error('❌ Preço inválido:', this.currentPrice);
                 return;
             }
 
             if (!this.expirationDate) {
                 this.showError('Por favor, selecione uma data de expiração');
+                console.error('❌ Data não selecionada');
                 return;
             }
 
             // Get uploaded options
             this.options = window.excelParser?.getUploadedOptions() || [];
+            console.log('📊 Opções carregadas:', this.options.length, this.options);
+            
             if (this.options.length === 0) {
                 this.showError('Por favor, faça upload de um arquivo com dados das opções');
+                console.error('❌ Nenhuma opção carregada');
                 return;
             }
 
             this.showLoading(true);
             this.showInfo('Analisando dados... Aguarde.');
+
+            console.log('📤 Enviando para API:', {
+                current_price: this.currentPrice,
+                expiration_date: this.expirationDate,
+                options: this.options
+            });
 
             // Call API
             const response = await fetch('/api/analyze', {
@@ -113,11 +194,17 @@ class GEXAnalyzerApp {
                 })
             });
 
+            console.log('📥 Resposta da API:', response.status, response.statusText);
+
             if (!response.ok) {
-                throw new Error('Erro na análise');
+                const errorData = await response.json();
+                console.error('❌ Erro da API:', errorData);
+                throw new Error(errorData.error || 'Erro na análise');
             }
 
             const result = await response.json();
+            console.log('✅ Análise completa:', result);
+            
             this.analysisResults = result;
 
             this.showLoading(false);
@@ -126,47 +213,56 @@ class GEXAnalyzerApp {
 
         } catch (error) {
             this.showLoading(false);
+            console.error('❌ Erro completo:', error);
             this.showError(`Erro: ${error.message}`);
-            console.error(error);
         }
     }
 
     displayResults(result) {
-        // Show sections
-        this.dashboardSection.classList.remove('hidden');
-        this.resultsSection.classList.remove('hidden');
+        try {
+            console.log('🎨 Iniciando displayResults com:', result);
+            
+            // Show sections
+            this.dashboardSection.classList.remove('hidden');
+            this.resultsSection.classList.remove('hidden');
 
-        // Update dashboard cards
-        document.getElementById('display-price').textContent = this.currentPrice.toFixed(2);
-        document.getElementById('total-gex').textContent = result.total_gex.toFixed(0);
-        document.getElementById('gex-regime').textContent = result.regime || 'Neutral';
-        document.getElementById('walls-count').textContent = result.patterns?.walls?.length || 0;
+            // Update dashboard cards
+            document.getElementById('display-price').textContent = this.currentPrice.toFixed(2);
+            document.getElementById('total-gex').textContent = result.total_gex.toFixed(0);
+            document.getElementById('gex-regime').textContent = result.regime || 'Neutral';
+            document.getElementById('walls-count').textContent = result.patterns?.walls?.length || 0;
 
-        // Pin risk level
-        const pinRiskElement = document.getElementById('pin-risk');
-        if (result.patterns?.pins?.length > 0) {
-            pinRiskElement.textContent = 'ALTO';
-            pinRiskElement.className = 'value badge badge-danger';
-        } else {
-            pinRiskElement.textContent = 'BAIXO';
-            pinRiskElement.className = 'value badge badge-success';
+            // Pin risk level
+            const pinRiskElement = document.getElementById('pin-risk');
+            if (result.patterns?.pins?.length > 0) {
+                pinRiskElement.textContent = 'ALTO';
+                pinRiskElement.className = 'value badge badge-danger';
+            } else {
+                pinRiskElement.textContent = 'BAIXO';
+                pinRiskElement.className = 'value badge badge-success';
+            }
+
+            // Populate results table
+            this.populateResultsTable(result.strikes);
+
+            // Create charts
+            this.createGexChart(result.strikes);
+            this.createGammaChart(result.strikes);
+
+            // Display patterns
+            this.displayPatterns(result.patterns);
+
+            // Display signals
+            this.displaySignals(result.strategies);
+
+            // Scroll to dashboard
+            window.scrollTo({ top: this.dashboardSection.offsetTop - 100, behavior: 'smooth' });
+            
+            console.log('✅ displayResults completado com sucesso');
+        } catch (error) {
+            console.error('❌ Erro em displayResults:', error);
+            this.showError(`Erro ao exibir resultados: ${error.message}`);
         }
-
-        // Populate results table
-        this.populateResultsTable(result.strikes);
-
-        // Create charts
-        this.createGexChart(result.strikes);
-        this.createGammaChart(result.strikes);
-
-        // Display patterns
-        this.displayPatterns(result.patterns);
-
-        // Display signals
-        this.displaySignals(result.strategies);
-
-        // Scroll to dashboard
-        window.scrollTo({ top: this.dashboardSection.offsetTop - 100, behavior: 'smooth' });
     }
 
     populateResultsTable(strikes) {
@@ -392,5 +488,14 @@ class GEXAnalyzerApp {
 
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('✅ DOM Content Loaded - Iniciando GEXAnalyzerApp');
     window.app = new GEXAnalyzerApp();
+    console.log('✅ GEXAnalyzerApp inicializado:', window.app);
+    console.log('✅ ExcelParser disponível:', !!window.excelParser);
+    console.log('✅ Elementos da UI:', {
+        priceInput: !!window.app.priceInput,
+        expirationInput: !!window.app.expirationInput,
+        analyzeBtn: !!window.app.analyzeBtn,
+        loadExampleBtn: !!window.app.loadExampleBtn
+    });
 });

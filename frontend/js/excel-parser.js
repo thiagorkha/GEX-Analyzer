@@ -178,74 +178,25 @@ class ExcelParser {
             throw new Error('Nenhuma linha válida encontrada com as colunas esperadas');
         }
 
-        return options;
-    }
-
-    validateAndFormatData(jsonData) {
-        if (jsonData.length === 0) {
-            throw new Error('Arquivo não contém dados');
-        }
-
-        // Map flexible column names
-        const columnMap = {
-            'ticker': ['ticker', 'symbol', 'ativo'],
-            'tipo': ['tipo', 'type', 'option_type', 'optiontype'],
-            'strike': ['strike', 'strike_price', 'strikeprice'],
-            'gamma': ['gamma', 'gamma_value'],
-            'oi': ['oi', 'open_interest', 'openinterest', 'volume']
-        };
-
-        const options = [];
-
-        for (const row of jsonData) {
-            const option = {};
-            let foundRequiredFields = 0;
-
-            for (const [key, aliases] of Object.entries(columnMap)) {
-                const rowKey = Object.keys(row).find(k => 
-                    aliases.includes(k.toLowerCase())
-                );
-
-                if (rowKey) {
-                    let value = row[rowKey];
-
-                    // Parse numeric fields
-                    if (['strike', 'gamma', 'oi'].includes(key)) {
-                        value = parseFloat(value);
-                        if (isNaN(value)) {
-                            throw new Error(`Valor inválido para ${key}: ${row[rowKey]}`);
-                        }
-                    }
-
-                    option[key] = value;
-                    foundRequiredFields++;
-                }
-            }
-
-            if (foundRequiredFields >= 5) {
-                options.push(option);
-            }
-        }
-
-        if (options.length === 0) {
-            throw new Error('Nenhuma linha válida encontrada com as colunas esperadas');
-        }
-
+        console.log('✅ Excel Parser: Carregado com sucesso', options);
         return options;
     }
 
     handleParsedData(options) {
+        console.log('✅ Excel Parser - Dados parseados:', options);
         this.fileStatus.textContent = `✅ ${options.length} opções carregadas com sucesso`;
         this.fileStatus.style.color = '#10b981';
 
         // Store in window for access from main.js
         window.uploadedOptions = options;
+        console.log('📦 window.uploadedOptions atualizado:', window.uploadedOptions);
 
         // Enable analyze button
         document.getElementById('analyze-btn').disabled = false;
     }
 
     showError(message) {
+        console.error('❌ Excel Parser Error:', message);
         this.fileStatus.textContent = `❌ ${message}`;
         this.fileStatus.style.color = '#ef4444';
         this.fileInput.value = '';
@@ -254,11 +205,19 @@ class ExcelParser {
     }
 
     getUploadedOptions() {
-        return window.uploadedOptions || [];
+        const options = window.uploadedOptions || [];
+        console.log('📊 getUploadedOptions() retornando:', options.length, 'opções');
+        return options;
     }
 }
 
 // Initialize parser
 document.addEventListener('DOMContentLoaded', () => {
-    window.excelParser = new ExcelParser();
+    console.log('🔧 ExcelParser: Inicializando...');
+    try {
+        window.excelParser = new ExcelParser();
+        console.log('✅ ExcelParser: Inicializado com sucesso');
+    } catch (error) {
+        console.error('❌ ExcelParser: Erro ao inicializar:', error);
+    }
 });
