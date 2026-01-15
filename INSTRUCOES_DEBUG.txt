@@ -1,0 +1,175 @@
+# 🎯 GEX Analyzer - Instruções de Debug
+
+## ⚡ SOLUÇÃO RÁPIDA (2 minutos)
+
+### Passo 1: Abra seu navegador
+- Vá para `http://localhost:5000` (se for local)
+- OU vá para seu link do Render (se estiver online)
+
+### Passo 2: Abra o Debug
+- Pressione **F12** (ou Ctrl+Shift+J, ou Cmd+Option+J no Mac)
+- Clique na aba **Console**
+- Vai aparecer um monte de mensagens coloridas
+
+### Passo 3: Teste
+1. Limpe o console: `console.clear()` e Enter
+2. Carregue um arquivo Excel
+3. Clique em "Analisar GEX"
+4. **OBSERVE O CONSOLE** - qual é a ÚLTIMA mensagem?
+
+### Passo 4: Me reporte
+```
+Última mensagem que vejo:
+[COPIE AQUI O QUE APARECE NO CONSOLE]
+
+Depois disso aparece:
+- Nada / Erro / Outra coisa?
+
+Arquivo testado:
+- Nome e número de linhas
+```
+
+---
+
+## 🎮 SOLUÇÃO INTERATIVA (3 minutos)
+
+### Se F12 é muito complicado, use isso:
+
+1. Abra: `http://seu-app/debug.html`
+2. Clique em **"Test Initialization"** → vê se app carregou
+3. Clique em **"Test DOM Elements"** → vê se HTML elementos existem
+4. Clique em **"Load Test Options"** → carrega dados de teste
+5. Clique em **"Simulate Analyze Click"** → simula click no botão
+6. **LEIA A CONSOLE INTEGRADA** na página
+
+Tudo que acontece aparece na caixa de console da página mesmo!
+
+---
+
+## 🏥 SOLUÇÃO AUTOMÁTICA (1 minuto)
+
+### Para preguiçosos:
+1. Abra: `http://seu-app/health-check.html`
+2. Aguarde 5 segundos (faz testes automáticos)
+3. Clique em **"Test Analyze (Direct)"**
+4. Clique em **"Test Analyze (Via App)"**
+5. Vê qual funciona e qual não funciona
+
+---
+
+## ❓ PERGUNTAS COMUNS
+
+### "O que significa cada mensagem?"
+```
+✅ = Sucesso, continua normal
+❌ = Erro! Algo não funcionou
+🔍 = Começando uma ação
+📊 = Dados recebidos
+📤 = Enviando para servidor
+📥 = Resposta do servidor
+```
+
+### "Como copio o erro?"
+1. Clique direito no erro
+2. "Copy message" OU "Copiar mensagem"
+3. Cola no seu reporte
+
+### "Vejo uma linha vermelha - é normal?"
+NÃO! Linha vermelha = ERRO
+- Copie o texto completo
+- Me mande
+- É importante!
+
+### "Depois de 'Enviando para API' não aparece nada"
+Significa que o servidor não respondeu
+- Verifique se servidor está rodando
+- Se local: `python app.py` no terminal
+- Se Render: veja o dashboard do Render
+
+---
+
+## 🔴 SE NADA DISSO FUNCIONAR
+
+### Envie-me:
+1. **Screenshot de F12 Console** (Ctrl+Shift+K, depois F5)
+2. **URL onde testou** (local ou Render)
+3. **Qual arquivo Excel usou** (descreva)
+4. **Quando parou de funcionar?** (nunca funcionou ou antes funcionava?)
+
+COM ISSO CONSIGO DEBUGAR!
+
+---
+
+## ✅ CHECKLIST
+
+Antes de reportar, verifique:
+
+- [ ] Recarreguei a página (F5)
+- [ ] Abri F12 Console
+- [ ] Vejo mensagens coloridas com emojis?
+- [ ] Carreguei um arquivo Excel
+- [ ] Cliquei em "Analisar GEX"
+- [ ] Qual é o ÚLTIMO emoji/mensagem que aparece?
+- [ ] Vejo alguma linha VERMELHA (erro)?
+
+---
+
+## 🎯 RESULTADO ESPERADO
+
+Se tudo funciona, você verá:
+
+```
+✅ DOM Content Loaded
+✅ GEXAnalyzerApp inicializado
+✅ ExcelParser carregado
+✅ Excel Parser: X opções carregadas
+🔍 Iniciando análise...
+📊 Opções carregadas: 5
+📤 Enviando para API: {...}
+📥 Resposta da API: 200 OK
+✅ Análise completa!
+```
+
+E o dashboard aparece com gráficos!
+
+---
+
+## ⚠️ PROBLEMAS COMUNS
+
+### "Não vejo nada no console"
+→ Recarregue a página com Ctrl+Shift+K (limpa) depois F5 (recarrega)
+
+### "Vejo 'Cannot read property...'"
+→ **COPIE ESSE ERRO COMPLETO E ME MANDE!**
+
+### "Última mensagem é '📤 Enviando para API'"
+→ Depois disso não aparece nada = API não respondeu
+
+### "Vejo erro de CORS"
+→ Isto é um problema de segurança do navegador
+→ **COPIE O ERRO E ME MANDE!**
+
+---
+
+## 📱 LINKS PARA TESTAR
+
+```
+App Principal:        http://localhost:5000/
+Debug Interativo:     http://localhost:5000/debug.html
+Verificação Sistema:  http://localhost:5000/health-check.html
+Teste API:           http://localhost:5000/test_api.html
+```
+
+---
+
+## 💬 PRONTO?
+
+1. Escolha UMA das 3 soluções acima (Rápida, Interativa ou Automática)
+2. Execute os passos
+3. Me mande o resultado
+
+**Com isso descobrimos rapidinho qual é o problema!** 🔍
+
+---
+
+*Boa sorte! Qualquer dúvida, pede ajuda!* 🍀

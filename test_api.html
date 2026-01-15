@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GEX Analyzer - API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .success {
+            color: #10b981;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .info {
+            color: #0ea5e9;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>🧪 GEX Analyzer - API Test Console</h1>
+        <p>Use os botões abaixo para testar a API</p>
+    </div>
+
+    <div class="box">
+        <h2>1️⃣ Teste de Health Check</h2>
+        <button onclick="testHealth()">Testar /api/health</button>
+        <pre id="health-result"></pre>
+    </div>
+
+    <div class="box">
+        <h2>2️⃣ Teste de Exemplos</h2>
+        <button onclick="testExamples()">Carregar /api/examples</button>
+        <pre id="examples-result"></pre>
+    </div>
+
+    <div class="box">
+        <h2>3️⃣ Teste de Análise Completa</h2>
+        <button onclick="testAnalyze()">Executar /api/analyze</button>
+        <pre id="analyze-result"></pre>
+    </div>
+
+    <div class="box">
+        <h2>📊 Console de Logs</h2>
+        <pre id="console-log" style="background: #000; color: #0f0; height: 300px; overflow-y: auto;"></pre>
+    </div>
+
+    <script>
+        const logElement = document.getElementById('console-log');
+        const originalLog = console.log;
+        const originalError = console.error;
+
+        console.log = function(...args) {
+            originalLog(...args);
+            const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' ');
+            logElement.textContent += `[LOG] ${msg}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        };
+
+        console.error = function(...args) {
+            originalError(...args);
+            const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' ');
+            logElement.textContent += `[ERROR] ${msg}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        };
+
+        async function testHealth() {
+            console.log('📡 Testando /api/health...');
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                console.log('✅ Resposta:', data);
+                document.getElementById('health-result').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('health-result').className = 'success';
+            } catch (error) {
+                console.error('❌ Erro:', error.message);
+                document.getElementById('health-result').textContent = `Erro: ${error.message}`;
+                document.getElementById('health-result').className = 'error';
+            }
+        }
+
+        async function testExamples() {
+            console.log('📡 Testando /api/examples...');
+            try {
+                const response = await fetch('/api/examples');
+                const data = await response.json();
+                console.log('✅ Exemplos recebidos:', data.length, 'cenários');
+                document.getElementById('examples-result').textContent = JSON.stringify(data, null, 2).substring(0, 500) + '...';
+                document.getElementById('examples-result').className = 'success';
+            } catch (error) {
+                console.error('❌ Erro:', error.message);
+                document.getElementById('examples-result').textContent = `Erro: ${error.message}`;
+                document.getElementById('examples-result').className = 'error';
+            }
+        }
+
+        async function testAnalyze() {
+            console.log('📡 Testando /api/analyze...');
+            try {
+                const testData = {
+                    current_price: 100.0,
+                    expiration_date: '2024-02-16',
+                    options: [
+                        { ticker: 'SPY', tipo: 'CALL', strike: 100.0, gamma: 0.28, oi: 12000 },
+                        { ticker: 'SPY', tipo: 'PUT', strike: 100.0, gamma: 0.15, oi: 4000 }
+                    ]
+                };
+                
+                console.log('📤 Enviando dados:', testData);
+                
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                
+                const data = await response.json();
+                console.log('✅ Análise completada:', data);
+                document.getElementById('analyze-result').textContent = JSON.stringify(data, null, 2).substring(0, 500) + '...';
+                document.getElementById('analyze-result').className = 'success';
+            } catch (error) {
+                console.error('❌ Erro:', error.message);
+                document.getElementById('analyze-result').textContent = `Erro: ${error.message}`;
+                document.getElementById('analyze-result').className = 'error';
+            }
+        }
+
+        console.log('✅ Test Console carregado. Use os botões acima para testar!');
+    </script>
+</body>
+</html>
